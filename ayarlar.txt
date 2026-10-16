@@ -1,0 +1,64 @@
+# ============ JARVIS AYARLARI ============
+# Bir ayarı değiştirdikten sonra Jarvis'i kapatıp yeniden başlat.
+
+# Yapay zekâ beyni için Claude API anahtarı (isteğe bağlı).
+# Boş bırakırsan Jarvis sadece temel komutları yapar (saat, uygulama açma, arama, hatırlatma...).
+# Anahtarı https://console.anthropic.com adresinden alabilirsin. "sk-ant-..." ile başlar.
+ANTHROPIC_API_KEY=
+
+# Kullanılacak model (hızlı ve ucuz olan varsayılan)
+MODEL=claude-haiku-5-5
+
+# Ses motoru:  otomatik = önce bilgisayara indirilen çevrimdışı Türkçe erkek sesi, olmazsa internetteki Edge sesleri
+#              edge     = sadece internetteki Microsoft Edge sesleri
+SES_MOTORU=otomatik
+
+# Konuşma hızı (çevrimdışı ses için): 0.8 yavaş, 1.0 normal, 1.2 hızlı
+SES_HIZI=1.5
+
+# İnternetteki Edge sesi:  tr-TR-AhmetNeural (erkek)  veya  tr-TR-EmelNeural (kadın)
+SES=tr-TR-AhmetNeural
+
+# Sana nasıl hitap etsin (efendim, patron, Doğukan...)
+HITAP=efendim
+
+# Görünüm:  seffaf  = masaüstünün üstünde şeffaf katman (arka planın görünür)
+#           pencere = ayrı, büyük Jarvis penceresi
+#           konsol  = ekransız, sadece ses
+ARAYUZ=seffaf
+
+# Şeffaf katmanda reaktörün ilk yeri: sag-alt / sol-alt / orta  (fareyle sürükleyince yeni yeri hatırlanır)
+KONUM=sag-alt
+
+# Jarvis her soruda ekranına baksın mı (evet / hayir). Sadece API anahtarı varsa çalışır.
+# "evet" iken her soruya ekran görüntüsü eklenir; maliyeti biraz artırır.
+EKRANI_GOR=evet
+
+# Jarvis fareyi ve klavyeyi kullanabilsin mi (evet / hayir). API anahtarı gerekir.
+# "Şu mesaja tıkla, merhaba yaz, gönder'e bas" gibi komutlar için.
+# Acil durdurma: fareyi ekranın sol üst köşesine götür ya da Esc'yi basılı tut.
+BILGISAYAR_KONTROL=evet
+
+# Hava durumu için şehir (boş = internet bağlantına göre otomatik bulunur)
+SEHIR=
+
+# Ekran tam ekran açılsın mı (evet / hayir)
+TAM_EKRAN=hayir
+
+# Uyanma yöntemi:
+#   otomatik = "Hey Jarvis" modeli varsa onu kullan, yoksa kelime dinleme
+#   kelime   = konuşmayı yazıya çevirip içinde "Jarvis" geçiyor mu bakar (internet ister)
+UYANMA_YONTEMI=otomatik
+
+# "Hey Jarvis" hassasiyeti: 0.3 (kolay uyanır) - 0.7 (zor uyanır)
+UYANMA_HASSASIYETI=0.5
+
+# Mikrofon: otomatik = Bluetooth kulaklık mikrofonu yerine bilgisayarın kendi mikrofonu
+# (ya da mikrofonun numarası / adının bir parçası, örn. MIKROFON=Realtek)
+MIKROFON=otomatik
+
+# Ses tanıma: otomatik = Whisper kuruluysa onu (daha iyi, bilgisayarda çalışır), yoksa Google
+#             google   = sadece Google
+TANIMA=otomatik
+# Whisper modeli: base (hızlı, zayıf) / small (önerilen) / medium (çok iyi ama yavaş, 1.5 GB)
+TANIMA_MODELI=small

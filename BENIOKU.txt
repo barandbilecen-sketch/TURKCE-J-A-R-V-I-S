@@ -1,0 +1,78 @@
+J.A.R.V.I.S. - TÜRKÇE SESLİ ASİSTAN
+====================================
+
+KURULUM (bir kere yapılır)
+1) "Kurulum.bat" dosyasına çift tıkla. Python yoksa kendisi yükler,
+   sonra gerekli paketleri indirir (5-10 dakika sürebilir).
+   Windows "Bilinmeyen yayımcı" uyarısı verirse "Ek bilgi > Yine de çalıştır" de.
+2) İstersen "ayarlar.txt" dosyasını Not Defteri ile açıp API anahtarını yapıştır
+   (yapay zekâ beyni için; yoksa da temel komutlar çalışır).
+
+TÜRKÇE ERKEK SESİ (internetsiz)
+- "Turkce Ses Kur.bat" dosyasına bir kere çift tıkla: çevrimdışı Türkçe erkek sesini
+  (Piper "dfki", yaklaşık 63 MB) indirip kurar ve deneme cümlesi okur.
+- Bu ses bilgisayarında çalıştığı için internet ya da Microsoft'a bağlı değildir.
+- Hızı ayarlar.txt içinde SES_HIZI ile değişir.
+
+DAHA İYİ SES TANIMA (önerilir)
+- "Gelismis Ses Tanima Kur.bat" dosyasına bir kere çift tıkla: Whisper ses tanımayı
+  (yaklaşık 480 MB) kurar. Seni Google'dan çok daha doğru anlar ve bilgisayarında çalışır.
+- Jarvis, AirPods gibi Bluetooth kulaklık mikrofonu yerine bilgisayarın kendi mikrofonunu
+  kullanır; Bluetooth mikrofonu sesi boğar ve kulaklığı düşük kaliteli telefon moduna sokar.
+
+KULLANIM
+- Masaüstündeki "Jarvis" kısayoluyla (ya da "Jarvis Baslat.bat") aç.
+- Jarvis masaüstünün üstünde ŞEFFAF olarak çalışır: arka planın ve pencerelerin görünür,
+  boş yerlere tıklayınca alttaki pencereye tıklamış olursun.
+  · Sağ altta dönen reaktör: sol tık = dinlemeye başla, sağ tık = menü
+    (Komut yaz / Saat-hava panelini gizle / Jarvis'i kapat), sürükle = taşı (yeni yeri hatırlanır).
+  · Sağ üstte saat, hava durumu, işlemci-bellek-pil.
+  · Konuşmalar reaktörün üstünde belirir, 30 saniye sonra kaybolur.
+  · Reaktörün rengi: mavi = bekliyor/dinliyor, turuncu = düşünüyor, kırmızı = sorun var.
+- "Hey Jarvis" de, bip sesini duyunca komutunu söyle. Cevaptan sonra 4 saniye içinde
+  konuşursan yeniden "Hey Jarvis" demene gerek yok.
+- API anahtarı varsa Jarvis her soruda ekranına da bakar: "bu ne?", "şu müşteriye ne
+  cevap vereyim?", "ekrandaki fiyatları topla" diyebilirsin.
+- EKRANDA İŞ YAPTIRMA (API anahtarı gerekir): Jarvis fareyi ve klavyeyi kullanabilir.
+  "Dinçer Bey'in mesajını aç", "ona 'yarın dönüş yapacağım' yaz ve gönder'e bas",
+  "Chrome'da yeni sekme aç ve Dubai vizesini ara" gibi söyle; adım adım yapar.
+  ACİL DURDURMA: fareyi ekranın sol üst köşesine götür ya da Esc'yi basılı tut.
+  Ödeme, şifre girme, kalıcı silme gibi işlerde önce sana sorar.
+- Kapatmak için: "görüşürüz" de ya da reaktöre sağ tık > Jarvis'i kapat.
+- Jarvis siyah pencere açmadan çalışır; kayıtlar "jarvis_kayit.txt" dosyasına yazılır
+  (bir sorun olursa bu dosyayı gönder). Siyah pencereli hali için "Jarvis Yazi Modu.bat"
+  ya da komut satırından "python jarvis.py" kullanılabilir.
+
+GÖRÜNÜM
+- Büyük pencereli eski görünüm için ayarlar.txt içinde ARAYUZ=pencere yap.
+
+ÖRNEK KOMUTLAR
+- Saat kaç? / Bugün günlerden ne? / Hava nasıl? / Dubai'de hava nasıl?
+- Sistem durumu (işlemci, bellek, batarya)
+- Chrome'u aç / WhatsApp aç / Telegram aç / Hesap makinesini aç
+- Gelen kutusunu aç (Meta Business Suite) / Reklam yöneticisini aç / Gmail aç
+- YouTube'da Tarkan aç / Sezen Aksu şarkısını çal
+- Google'da Dubai vize ücreti ara
+- 10 dakika sonra müşteriyi aramayı hatırlat
+- Not al yarın otele teyit gönder / Notlarımı oku
+- Sesi aç / Sesi kıs / Sesi kapat / Müziği durdur / Sonraki şarkı
+- Ekran görüntüsü al / Bilgisayarı kilitle
+- Deniz kenarında lüks otel görseli yap / Bana bir kedi çiz (ücretsiz, anahtar gerekmez)
+API anahtarı eklediysen her şeyi sorabilirsin:
+- "Dubai'ye gidecek müşteriye kısa bir mesaj yaz"
+- "Abu Dhabi turunda neler görülür?"
+- "Dubai turu için Instagram gönderisi görseli yap" / "Rengini maviye çevir"
+- "Ekranımda ne var?" / "Bu müşteriye ne cevap vereyim?" (ekrana bakar)
+
+SORUN ÇÖZME
+- Beni duymuyor: Windows Ayarlar > Gizlilik > Mikrofon izinlerini aç;
+  doğru mikrofonu seçmek için ayarlar.txt içinde MIKROFON= numarasını yaz
+  (numaralar Jarvis açılamazsa pencerede listelenir).
+- Zor uyanıyor: ayarlar.txt içinde UYANMA_HASSASIYETI=0.35 yap.
+  Kendi kendine uyanıyor: 0.65 yap.
+- "Hey Jarvis" hiç çalışmıyorsa UYANMA_YONTEMI=kelime yap; o zaman cümlenin
+  içinde "Jarvis" demen yeter (ör. "Jarvis saat kaç").
+- Ses tanıma ve konuşma için internet gerekir.
+
+Tam ekran ve hava durumu şehri ayarlar.txt içinden değişir (TAM_EKRAN, SEHIR).
+Notların "notlarim.txt", ekran görüntüleri "Resimler\Jarvis" klasörüne kaydedilir.

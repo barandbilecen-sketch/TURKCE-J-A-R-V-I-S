@@ -1,0 +1,11 @@
+numpy
+sounddevice
+SpeechRecognition>=3.11
+edge-tts
+pygame
+pyttsx3
+pillow
+anthropic
+pywebview
+psutil
+piper-tts

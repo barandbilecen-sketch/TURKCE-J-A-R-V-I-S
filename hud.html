@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>J.A.R.V.I.S.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --c: #2fd8ff;          /* ana renk (duruma göre değişir) */
+    --c-rgb: 47, 216, 255;
+    --dim: rgba(var(--c-rgb), .35);
+    --faint: rgba(var(--c-rgb), .12);
+    --bg: #02070d;
+    --text: #cdf6ff;
+    --muted: #5f8ea0;
+    --spin: 1;             /* dönme hızı çarpanı */
+    --lvl: 0;              /* ses seviyesi 0..1 */
+  }
+  body[data-state="dinliyor"]   { --c: #6ff4ff; --c-rgb: 111, 244, 255; --spin: 2.2; }
+  body[data-state="dusunuyor"]  { --c: #ffb23e; --c-rgb: 255, 178, 62;  --spin: 5; }
+  body[data-state="konusuyor"]  { --c: #8fefff; --c-rgb: 143, 239, 255; --spin: 1.6; }
+  body[data-state="hata"]       { --c: #ff4d5e; --c-rgb: 255, 77, 94;   --spin: .5; }
+  body[data-state="baslatiliyor"] { --spin: 3; }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(ellipse at 50% 45%, rgba(var(--c-rgb), .10), transparent 55%),
+      radial-gradient(ellipse at 50% 120%, rgba(0, 90, 140, .25), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: "Rajdhani", "Segoe UI", sans-serif;
+    overflow: hidden;
+    user-select: none;
+    transition: background .6s;
+  }
+  /* ızgara + tarama çizgileri */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      linear-gradient(rgba(var(--c-rgb), .05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(var(--c-rgb), .05) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse at center, #000 30%, transparent 80%);
+  }
+  body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0 1px, transparent 1px 3px);
+    mix-blend-mode: multiply;
+  }
+
+  .app {
+    position: relative; z-index: 1; height: 100%;
+    display: grid;
+    grid-template-columns: 270px 1fr 360px;
+    grid-template-rows: auto 1fr auto;
+    gap: 18px; padding: 18px 22px;
+  }
+
+  /* ---------- üst bar ---------- */
+  header {
+    grid-column: 1 / -1;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid var(--faint); padding-bottom: 12px;
+  }
+  .logo { display: flex; align-items: baseline; gap: 14px; }
+  .logo h1 {
+    font-family: "Orbitron", sans-serif; font-weight: 900; font-size: 26px; letter-spacing: .32em;
+    color: var(--c); text-shadow: 0 0 12px rgba(var(--c-rgb), .7);
+    transition: color .5s;
+  }
+  .logo small { color: var(--muted); font-size: 13px; letter-spacing: .2em; text-transform: uppercase; }
+  .clock { text-align: right; }
+  .clock .t { font-family: "Orbitron"; font-size: 30px; font-weight: 700; color: var(--c); letter-spacing: .08em;
+              text-shadow: 0 0 10px rgba(var(--c-rgb), .6); font-variant-numeric: tabular-nums; }
+  .clock .d { color: var(--muted); font-size: 14px; letter-spacing: .18em; text-transform: uppercase; }
+
+  /* ---------- paneller ---------- */
+  .panel {
+    position: relative; padding: 18px 18px 16px;
+    background: linear-gradient(180deg, rgba(var(--c-rgb), .06), rgba(var(--c-rgb), .015));
+    border: 1px solid var(--faint);
+    clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 18px 100%, 0 calc(100% - 18px));
+    min-height: 0;
+  }
+  .panel::before, .panel::after {
+    content: ""; position: absolute; width: 14px; height: 14px; border: 2px solid var(--c);
+    transition: border-color .5s;
+  }
+  .panel::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .panel::after  { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+  .ptitle {
+    font-family: "Orbitron"; font-size: 11px; letter-spacing: .3em; color: var(--c);
+    display: flex; align-items: center; gap: 10px; margin-bottom: 14px; transition: color .5s;
+  }
+  .ptitle::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, var(--dim), transparent); }
+
+  .left { display: flex; flex-direction: column; gap: 18px; min-height: 0; }
+  .left .panel { flex: 0 0 auto; }
+
+  .stat { margin-bottom: 14px; }
+  .stat:last-child { margin-bottom: 0; }
+  .stat .row { display: flex; justify-content: space-between; font-size: 14px; letter-spacing: .12em; color: var(--muted); }
+  .stat .row b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .bar { height: 6px; margin-top: 6px; background: var(--faint); position: relative; overflow: hidden; }
+  .bar i { position: absolute; inset: 0 auto 0 0; width: 0%; background: var(--c);
+           box-shadow: 0 0 10px var(--c); transition: width .8s ease, background .5s; }
+  .bar::after { content: ""; position: absolute; inset: 0;
+                background: repeating-linear-gradient(90deg, transparent 0 9px, var(--bg) 9px 11px); }
+
+  .weather .temp { font-family: "Orbitron"; font-size: 40px; font-weight: 700; color: var(--text); line-height: 1; }
+  .weather .temp sup { font-size: 18px; color: var(--c); }
+  .weather .desc { margin-top: 8px; font-size: 17px; font-weight: 500; }
+  .weather .loc { color: var(--muted); font-size: 13px; letter-spacing: .2em; text-transform: uppercase; margin-top: 4px; }
+
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 14px; }
+  .kv span { color: var(--muted); letter-spacing: .12em; }
+  .kv b { color: var(--text); font-weight: 600; text-align: right; }
+
+  /* ---------- merkez: ark reaktörü ---------- */
+  .center { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 0; position: relative; }
+  .reactor { position: relative; width: min(52vh, 100%); aspect-ratio: 1; max-width: 520px; }
+  .reactor svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .reactor .ring { transform-origin: 250px 250px; transform-box: view-box; }
+  .r1 { animation: spin calc(60s / var(--spin)) linear infinite; }
+  .r2 { animation: spin calc(36s / var(--spin)) linear infinite reverse; }
+  .r3 { animation: spin calc(22s / var(--spin)) linear infinite; }
+  .r4 { animation: spin calc(14s / var(--spin)) linear infinite reverse; }
+  .r5 { animation: spin calc(9s  / var(--spin)) linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .reactor circle, .reactor line, .reactor path { transition: stroke .5s, fill .5s; }
+
+  .core-glow {
+    position: absolute; left: 50%; top: 50%; width: 34%; aspect-ratio: 1; border-radius: 50%;
+    transform: translate(-50%, -50%) scale(calc(1 + var(--lvl) * .35));
+    background: radial-gradient(circle, #fff 0%, rgba(var(--c-rgb), .95) 22%, rgba(var(--c-rgb), .35) 48%, transparent 70%);
+    filter: blur(2px);
+    box-shadow: 0 0 calc(40px + var(--lvl) * 90px) rgba(var(--c-rgb), .55);
+    transition: transform .08s linear, box-shadow .08s linear, background .5s;
+  }
+  body[data-state="bekliyor"] .core-glow { animation: breathe 4s ease-in-out infinite; }
+  @keyframes breathe { 50% { opacity: .7; } }
+
+  .state-label {
+    margin-top: 26px; font-family: "Orbitron"; font-size: 15px; letter-spacing: .5em; color: var(--c);
+    text-shadow: 0 0 10px rgba(var(--c-rgb), .8); transition: color .5s; text-transform: uppercase;
+  }
+  .hint { margin-top: 8px; color: var(--muted); font-size: 15px; letter-spacing: .1em; min-height: 20px; text-align: center; }
+
+  .wave { display: flex; align-items: center; gap: 4px; height: 46px; margin-top: 18px; }
+  .wave i { display: block; width: 4px; height: 4px; background: var(--c); border-radius: 2px;
+            box-shadow: 0 0 6px var(--c); transition: height .09s linear, background .5s; opacity: .85; }
+
+  /* ---------- sağ: iletişim kaydı ---------- */
+  .right { display: flex; flex-direction: column; min-height: 0; }
+  .right .panel { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .log { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 6px; scroll-behavior: smooth; }
+  .log::-webkit-scrollbar { width: 4px; }
+  .log::-webkit-scrollbar-thumb { background: var(--dim); }
+  .msg { animation: msgIn .35s ease-out; }
+  @keyframes msgIn { from { opacity: 0; transform: translateX(14px); } }
+  .msg .who { font-family: "Orbitron"; font-size: 10px; letter-spacing: .28em; margin-bottom: 4px; display: flex; gap: 8px; }
+  .msg .who em { font-style: normal; color: var(--muted); font-family: "Rajdhani"; letter-spacing: .1em; font-size: 12px; }
+  .msg .txt { font-size: 16px; line-height: 1.35; padding: 8px 12px; border-left: 2px solid; }
+  .msg.jarvis .who { color: var(--c); }
+  .msg.jarvis .txt { border-color: var(--c); background: rgba(var(--c-rgb), .06); }
+  .msg.sen .who { color: #9fb3bd; }
+  .msg.sen .txt { border-color: #4c6672; color: #e6eef2; background: rgba(255,255,255,.025); }
+  .msg.sistem .txt { border-color: transparent; color: var(--muted); font-size: 14px; padding: 2px 12px; font-style: italic; }
+  .msg.sistem .who { display: none; }
+  .empty { color: var(--muted); font-size: 14px; letter-spacing: .1em; text-align: center; margin: auto; }
+
+  /* ---------- alt bar ---------- */
+  footer { grid-column: 1 / -1; display: flex; gap: 14px; align-items: center; }
+  .input {
+    flex: 1; display: flex; align-items: center; gap: 12px;
+    border: 1px solid var(--dim); background: rgba(var(--c-rgb), .04); padding: 0 14px;
+    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+    transition: border-color .3s;
+  }
+  .input:focus-within { border-color: var(--c); box-shadow: inset 0 0 18px rgba(var(--c-rgb), .12); }
+  .input span { font-family: "Orbitron"; color: var(--c); font-size: 13px; letter-spacing: .2em; }
+  .input input {
+    flex: 1; background: transparent; border: 0; outline: 0; color: var(--text);
+    font: 500 17px "Rajdhani", sans-serif; letter-spacing: .05em; padding: 13px 0; user-select: text;
+  }
+  .input input::placeholder { color: var(--muted); }
+  button.mic {
+    width: 50px; height: 46px; border: 1px solid var(--dim); background: rgba(var(--c-rgb), .06);
+    color: var(--c); cursor: pointer; display: grid; place-items: center;
+    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%); transition: .2s;
+  }
+  button.mic:hover { background: rgba(var(--c-rgb), .18); }
+  .ticker { font-size: 12px; letter-spacing: .25em; color: var(--muted); white-space: nowrap; }
+  .ticker b { color: var(--c); font-weight: 600; }
+
+  @media (max-width: 1100px) { .app { grid-template-columns: 230px 1fr 300px; } }
+  @media (max-width: 860px) {
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr 200px auto; }
+    .left { display: none; }
+    .ticker { display: none; }
+  }
+</style>
+</head>
+<body data-state="baslatiliyor">
+<div class="app">
+  <header>
+    <div class="logo">
+      <h1>J.A.R.V.I.S.</h1>
+      <small>Just A Rather Very Intelligent System</small>
+    </div>
+    <div class="clock"><div class="t" id="saat">--:--:--</div><div class="d" id="tarih"></div></div>
+  </header>
+
+  <aside class="left">
+    <div class="panel">
+      <div class="ptitle">SİSTEM</div>
+      <div class="stat"><div class="row">İŞLEMCİ <b id="cpuT">--%</b></div><div class="bar"><i id="cpu"></i></div></div>
+      <div class="stat"><div class="row">BELLEK <b id="ramT">--%</b></div><div class="bar"><i id="ram"></i></div></div>
+      <div class="stat" id="batWrap"><div class="row">BATARYA <b id="batT">--%</b></div><div class="bar"><i id="bat"></i></div></div>
+    </div>
+    <div class="panel weather">
+      <div class="ptitle">ATMOSFER</div>
+      <div class="temp" id="wTemp">--<sup>°C</sup></div>
+      <div class="desc" id="wDesc">Veri alınıyor…</div>
+      <div class="loc" id="wLoc"></div>
+    </div>
+    <div class="panel">
+      <div class="ptitle">ÇEKİRDEK</div>
+      <div class="kv">
+        <span>BEYİN</span><b id="beyin">—</b>
+        <span>SES</span><b id="ses">—</b>
+        <span>UYANMA</span><b id="uyanma">—</b>
+        <span>ÇALIŞMA</span><b id="uptime">00:00</b>
+      </div>
+    </div>
+  </aside>
+
+  <main class="center">
+    <div class="reactor">
+      <svg viewBox="0 0 500 500" aria-hidden="true">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g filter="url(#glow)" fill="none" stroke="var(--c)">
+          <!-- dış tik halkası -->
+          <g class="ring r1" id="ticks" stroke-opacity=".7"></g>
+          <circle cx="250" cy="250" r="238" stroke-opacity=".25" stroke-width="1"/>
+          <!-- kesikli halka -->
+          <circle class="ring r2" cx="250" cy="250" r="218" stroke-width="2" stroke-dasharray="2 10" stroke-opacity=".8"/>
+          <!-- yay segmentleri -->
+          <g class="ring r3" stroke-width="7" stroke-opacity=".85">
+            <circle cx="250" cy="250" r="196" stroke-dasharray="120 34 40 34 210 34 60 34 140 34 70 256" />
+          </g>
+          <circle cx="250" cy="250" r="182" stroke-opacity=".3" stroke-width="1"/>
+          <!-- iç ince halka -->
+          <g class="ring r4" stroke-width="2">
+            <circle cx="250" cy="250" r="166" stroke-dasharray="300 40 120 40 160 40 100 40" stroke-opacity=".7"/>
+          </g>
+          <!-- 10 bobin segmenti (Mark I reaktörü gibi) -->
+          <g class="ring r5" stroke-width="26" stroke-opacity=".55">
+            <circle cx="250" cy="250" r="128" stroke-dasharray="64.4 16"/>
+          </g>
+          <circle cx="250" cy="250" r="108" stroke-width="2" stroke-opacity=".9"/>
+          <circle cx="250" cy="250" r="96" stroke-width="1" stroke-opacity=".4"/>
+          <!-- üçgen çerçeve -->
+          <path d="M250 168 L321 291 L179 291 Z" stroke-width="2.5" stroke-opacity=".75"/>
+        </g>
+      </svg>
+      <div class="core-glow"></div>
+    </div>
+    <div class="state-label" id="durum">Başlatılıyor</div>
+    <div class="hint" id="ipucu">Sistemler yükleniyor…</div>
+    <div class="wave" id="wave"></div>
+  </main>
+
+  <aside class="right">
+    <div class="panel">
+      <div class="ptitle">İLETİŞİM KAYDI</div>
+      <div class="log" id="log"><div class="empty" id="empty">Henüz konuşma yok</div></div>
+    </div>
+  </aside>
+
+  <footer>
+    <button class="mic" id="mic" title="Dinlemeye başla (Hey Jarvis demeden)">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v4"/></svg>
+    </button>
+    <label class="input"><span>&gt;_</span><input id="komut" placeholder="Komut yaz ve Enter'a bas…  (ya da “Hey Jarvis” de)" autocomplete="off"></label>
+    <div class="ticker">PROTOKOL <b>AKTİF</b> · KİŞİSEL ASİSTAN ARAYÜZÜ</div>
+  </footer>
+</div>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const ETIKET = {
+    baslatiliyor: ["Başlatılıyor", "Sistemler yükleniyor…"],
+    bekliyor:     ["Çevrimiçi", "“Hey Jarvis” de ya da aşağıya yaz"],
+    dinliyor:     ["Dinliyorum", "Seni dinliyorum…"],
+    dusunuyor:    ["İşleniyor", "Bir saniye…"],
+    konusuyor:    ["Yanıtlıyor", ""],
+    hata:         ["Uyarı", ""],
+  };
+  let durum = "baslatiliyor", hedefSeviye = 0, seviye = 0;
+
+  // ---------- reaktör tikleri ----------
+  (() => {
+    const g = $("ticks"), NS = "http://www.w3.org/2000/svg";
+    for (let i = 0; i < 120; i++) {
+      const a = i / 120 * Math.PI * 2, uzun = i % 10 === 0, orta = i % 5 === 0;
+      const r1 = 246, r2 = uzun ? 230 : orta ? 236 : 240;
+      const l = document.createElementNS(NS, "line");
+      l.setAttribute("x1", 250 + Math.cos(a) * r1); l.setAttribute("y1", 250 + Math.sin(a) * r1);
+      l.setAttribute("x2", 250 + Math.cos(a) * r2); l.setAttribute("y2", 250 + Math.sin(a) * r2);
+      l.setAttribute("stroke-width", uzun ? 2.5 : 1);
+      g.appendChild(l);
+    }
+  })();
+
+  // ---------- dalga çubukları ----------
+  const BAR = 41, bars = [];
+  for (let i = 0; i < BAR; i++) { const b = document.createElement("i"); $("wave").appendChild(b); bars.push(b); }
+
+  function kare(t) {
+    // konuşurken yapay dalga, dinlerken gerçek mikrofon seviyesi
+    let h = hedefSeviye;
+    if (durum === "konusuyor") h = .35 + .45 * Math.abs(Math.sin(t / 140)) * (0.6 + 0.4 * Math.sin(t / 53));
+    else if (durum === "dusunuyor") h = .15 + .1 * Math.sin(t / 120);
+    else if (durum === "bekliyor" || durum === "baslatiliyor") h = Math.max(h * .4, .04);
+    seviye += (h - seviye) * .25;
+    document.documentElement.style.setProperty("--lvl", seviye.toFixed(3));
+    const mid = (BAR - 1) / 2;
+    bars.forEach((b, i) => {
+      const uzak = Math.abs(i - mid) / mid;
+      let v;
+      if (durum === "dusunuyor") v = .15 + .5 * Math.max(0, Math.sin(t / 90 - i * .5));
+      else v = seviye * (1 - uzak * .75) * (0.55 + 0.45 * Math.sin(t / 70 + i * 1.7) ** 2);
+      b.style.height = Math.max(3, v * 46) + "px";
+    });
+    requestAnimationFrame(kare);
+  }
+  requestAnimationFrame(kare);
+
+  // ---------- saat ----------
+  const GUN = ["PAZAR","PAZARTESİ","SALI","ÇARŞAMBA","PERŞEMBE","CUMA","CUMARTESİ"];
+  const AY = ["OCAK","ŞUBAT","MART","NİSAN","MAYIS","HAZİRAN","TEMMUZ","AĞUSTOS","EYLÜL","EKİM","KASIM","ARALIK"];
+  const baslangic = Date.now();
+  function saat() {
+    const d = new Date(), p = n => String(n).padStart(2, "0");
+    $("saat").textContent = `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+    $("tarih").textContent = `${GUN[d.getDay()]} · ${d.getDate()} ${AY[d.getMonth()]} ${d.getFullYear()}`;
+    const s = Math.floor((Date.now() - baslangic) / 1000);
+    $("uptime").textContent = s >= 3600 ? `${Math.floor(s/3600)}s ${p(Math.floor(s/60)%60)}dk` : `${p(Math.floor(s/60))}:${p(s%60)}`;
+  }
+  setInterval(saat, 1000); saat();
+
+  // ---------- Python'un çağırdığı fonksiyonlar ----------
+  window.setState = (s, ipucu) => {
+    durum = s; document.body.dataset.state = s;
+    const e = ETIKET[s] || [s, ""];
+    $("durum").textContent = e[0];
+    $("ipucu").textContent = ipucu ?? e[1];
+  };
+  window.setLevel = v => { hedefSeviye = Math.min(1, Math.max(0, v)); };
+  window.addMsg = (kim, metin) => {
+    $("empty")?.remove();
+    const d = new Date(), p = n => String(n).padStart(2, "0");
+    const el = document.createElement("div");
+    el.className = "msg " + kim;
+    const ad = kim === "jarvis" ? "JARVIS" : kim === "sen" ? "SEN" : "";
+    el.innerHTML = `<div class="who">${ad}<em>${p(d.getHours())}:${p(d.getMinutes())}</em></div><div class="txt"></div>`;
+    el.querySelector(".txt").textContent = metin;
+    const log = $("log"); log.appendChild(el);
+    while (log.children.length > 60) log.firstChild.remove();
+    log.scrollTop = log.scrollHeight;
+    if (kim === "jarvis" && durum === "konusuyor") $("ipucu").textContent = "";
+  };
+  window.setStats = s => {
+    const yaz = (k, v) => { if (v == null) return; $(k).style.width = v + "%"; $(k + "T").textContent = Math.round(v) + "%"; };
+    yaz("cpu", s.cpu); yaz("ram", s.ram);
+    if (s.bat == null) $("batWrap").style.display = "none"; else { $("batWrap").style.display = ""; yaz("bat", s.bat); }
+  };
+  window.setWeather = w => {
+    $("wTemp").innerHTML = `${w.temp}<sup>°C</sup>`;
+    $("wDesc").textContent = w.desc + (w.hiss != null ? ` · hissedilen ${w.hiss}°` : "");
+    $("wLoc").textContent = w.yer || "";
+  };
+  window.setInfo = i => {
+    if (i.beyin) $("beyin").textContent = i.beyin;
+    if (i.ses) $("ses").textContent = i.ses;
+    if (i.uyanma) $("uyanma").textContent = i.uyanma;
+  };
+
+  // ---------- kullanıcı girişi ----------
+  const api = () => window.pywebview && window.pywebview.api;
+  $("komut").addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    const v = e.target.value.trim(); if (!v) return;
+    e.target.value = "";
+    if (api()) api().komut(v);
+    else { addMsg("sen", v); setTimeout(() => { setState("konusuyor"); addMsg("jarvis", "Önizleme modundayım; gerçek Jarvis'i Jarvis Baslat ile aç."); setTimeout(() => setState("bekliyor"), 2500); }, 400); }
+  });
+  $("mic").addEventListener("click", () => { if (api()) api().dinle(); });
+  window.addEventListener("pywebviewready", () => api().hazir());
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+.venv/
+__pycache__/
+sesler/
+jarvis_kayit.txt
+bluetooth_kayit.txt
+konum.txt
